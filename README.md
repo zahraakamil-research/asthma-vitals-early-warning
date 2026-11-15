@@ -60,12 +60,13 @@ Then:
 2. Run the scripts in order:
 
 ```python
-!python scripts/01_build_mimic_dataset.py
-!python scripts/02_train_models.py
-!python scripts/03_evaluate_internal.py
-!python scripts/04_external_eicu.py
-!python scripts/05_rule_latency_cohort.py
-!python scripts/06_explain_and_figures.py
+from google.colab import auth; auth.authenticate_user()   # BigQuery sign-in must run inside the notebook
+%run scripts/01_build_mimic_dataset.py
+%run scripts/02_train_models.py
+%run scripts/03_evaluate_internal.py
+%run scripts/04_external_eicu.py
+%run scripts/05_rule_latency_cohort.py
+%run scripts/06_explain_and_figures.py
 ```
 
 All derived files are written to `config.WORK` on your own Google Drive.
@@ -79,7 +80,8 @@ All derived files are written to `config.WORK` on your own Google Drive.
 | Windows | hourly means, forward-fill ≤ 2 h, 12 h input, 2 h horizon |
 | Episode label | GINA 2026 severe criterion (SpO2 < 92 % or RR > 30 /min) in both horizon hours |
 | Exclusions | windows already meeting the criterion in the last input hour; one-hour (transient) windows removed from training only |
-| Split | by patient (`subject_id`), 70 / 15 / 15, seed 42 |
+| Standardisation | fixed constants in `config.NORM_STATS` (mean and SD per channel and for age), identical to those of the trained model |
+| Split | by patient (`subject_id`), 70 / 15 / 15, seed 42; drawn once over the 5,537 patients with at least one 6 h window at an earlier development stage and kept fixed (`split_patients`) |
 | Training | weighted BCE (pos_weight 47.8), Adam 1e-3, batch 512, ≤ 100 epochs, early stopping (patience 10) on validation AUC; then focal loss (α 0.8, γ 2), Adam 1e-4, 10 epochs; ensemble of fine-tuning epochs 3–5 |
 | Thresholds | warning = max F1 with recall ≥ 0.80; urgent = lowest threshold with accuracy ≥ 0.95 (validation only) |
 | Episode evaluation | 6 h look-back; an alarm is a run of consecutive alarm hours |
@@ -93,7 +95,15 @@ The study used Python 3.13, PyTorch 2.14, torchaudio 2.11, scikit-learn 1.6, Num
 
 The study was carried out interactively in Colab notebooks. This repository reorganises the cells that produced the reported results into scripts, without changing the methods.
 
-`scripts/00_verify_against_original.py` rebuilds the dataset in memory and compares it with the original study files: window counts, labels, patient split, ages and standardisation statistics.
+`scripts/00_verify_against_original.py` rebuilds the dataset in memory and compares it with the original study files. Checked on 15 Nov 2026, the rebuilt dataset was identical to the one used in the paper in:
+
+- windows (522,638) and patients (5,334);
+- episode, transient and in-episode labels;
+- input values (same total);
+- patient split;
+- age.
+
+The standardisation constants were computed once at an early development stage. They are published in `config.py` exactly as used by the model.
 
 ## License
 

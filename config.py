@@ -24,6 +24,13 @@ HORIZON_H = 2         # prediction horizon (hours); episode = criterion met in b
 FFILL_LIMIT = 2       # forward-fill of short gaps (hours)
 MIN_AGE = 18          # adults only for the Conformer branch
 
+# Standardisation constants used by the trained (frozen) model: per-channel mean and SD of HR, RR, SpO2 and of age.
+# They were computed once, at an early development stage, on the training windows of the first 12 h build
+# (aggregate values only, no patient-level data) and kept fixed for every model in the paper.
+NORM_STATS = dict(mu=[86.29158020019531, 19.915254592895508, 96.0790786743164],
+                  sd=[16.73603630065918, 5.598541736602783, 2.844135284423828],
+                  a_mu=59.624290466308594, a_sd=16.39702796936035)
+
 # Training
 SEED = 42             # split, ResNet, PatchTST, CatBoost, bootstrap
 CONFORMER_SEED = 0    # seed used for the Conformer run reported in the paper
