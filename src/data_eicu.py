@@ -54,7 +54,7 @@ def build_windows(vh, adult):
         if r is None:
             continue
         inp, hor, end = r; n = len(inp)
-        out['X'].append(inp); out['y'].append(gina_severe(hor).all(1)); out['flag'].append(gina_severe(inp)[:, -1])
+        out['X'].append(inp.astype(np.float32)); out['y'].append(gina_severe(hor).all(1)); out['flag'].append(gina_severe(inp)[:, -1])
         out['stay'].append(np.full(n, sid)); out['end'].append(end)
         out['age'].append(np.full(n, age[sid], np.float32)); out['patient'].append(np.full(n, pid[sid]))
     d = {k: np.concatenate(v) for k, v in out.items()}

@@ -55,7 +55,7 @@ def stay_windows(g, cols, w=C.INPUT_H, h=C.HORIZON_H):
     if not ok.any():
         return None
     end = (h0 + np.arange(len(win)) + w - 1)[ok]
-    return inp[ok].astype(np.float32), hor[ok], end
+    return inp[ok], hor[ok], end                     # float64: labels are computed before casting
 
 
 def build_windows(vh, cols=C.VITALS, age_col='anchor_age', stay_col='stay_id', subj_col='subject_id'):
@@ -71,7 +71,7 @@ def build_windows(vh, cols=C.VITALS, age_col='anchor_age', stay_col='stay_id', s
         inp, hor, end = r
         a, ai = gina_severe(hor), gina_severe(inp)
         n = len(inp)
-        out['X'].append(inp); out['y'].append(a.all(1)); out['transient'].append(a.any(1) & ~a.all(1))
+        out['X'].append(inp.astype(np.float32)); out['y'].append(a.all(1)); out['transient'].append(a.any(1) & ~a.all(1))
         out['flag'].append(ai[:, -1]); out['subject'].append(np.full(n, sid)); out['stay'].append(np.full(n, stay))
         out['end'].append(end); out['age'].append(np.full(n, g[age_col].iloc[0], np.float32))
     d = {k: np.concatenate(v) for k, v in out.items()}
@@ -80,14 +80,30 @@ def build_windows(vh, cols=C.VITALS, age_col='anchor_age', stay_col='stay_id', s
     return d
 
 
-def patient_split(subject, seed=C.SEED):
-    """70 / 15 / 15 split by patient (subject_id), so all windows of a patient stay in one set."""
-    idx = np.arange(len(subject))
-    tr, tmp = next(GroupShuffleSplit(1, test_size=0.30, random_state=seed).split(idx, groups=subject))
-    va_i, te_i = next(GroupShuffleSplit(1, test_size=0.50, random_state=seed).split(tmp, groups=subject[tmp]))
-    split = np.empty(len(subject), dtype='<U5')
-    split[tr], split[tmp[va_i]], split[tmp[te_i]] = 'train', 'val', 'test'
+def split_patients(vh, cols=C.VITALS, seed=C.SEED):
+    """70 / 15 / 15 split by patient (subject_id), so all windows of a patient stay in one set.
+    As in the study, the split was drawn once, at an earlier development stage, over the patients with at
+    least one 6 h input window (complete input, horizon not entirely missing; 5,537 patients) and then kept
+    fixed; the 12 h dataset inherits it. Returns {subject_id: 'train' | 'val' | 'test'}."""
+    keep = []
+    for (sid, _), g in vh.groupby(['subject_id', 'stay_id']):
+        g = g.set_index('hr_idx')[cols]
+        v = g.reindex(range(g.index.min(), g.index.max() + 1)).ffill(limit=C.FFILL_LIMIT).to_numpy(np.float64)
+        if len(v) < 6 + C.HORIZON_H:
+            continue
+        win = swv(v, (6 + C.HORIZON_H, 3))[:, 0]
+        if (~np.isnan(win[:, :6]).any((1, 2)) & ~np.isnan(win[:, 6:]).all((1, 2))).any():
+            keep.append(sid)
+    groups = np.array(sorted(set(keep))); idx = np.arange(len(groups))
+    tr, tmp = next(GroupShuffleSplit(1, test_size=0.30, random_state=seed).split(idx, groups=groups))
+    va, te = next(GroupShuffleSplit(1, test_size=0.50, random_state=seed).split(tmp, groups=groups[tmp]))
+    split = {g: 'train' for g in groups[tr]}
+    split.update({g: 'val' for g in groups[tmp[va]]}); split.update({g: 'test' for g in groups[tmp[te]]})
     return split
+
+
+def assign_split(subject, split_map):
+    return np.array([split_map[s] for s in subject], dtype='<U5')
 
 
 def norm_stats(d, mask):
