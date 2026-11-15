@@ -10,7 +10,7 @@ from src.data_mimic import load_sets
 from src.models import ConformerAge, ResNet1D, PatchTST, n_params
 from src import train as T
 
-stats = dict(np.load(f'{C.MIMIC_DIR}/norm_stats_12h.npz'))
+stats = {k: np.asarray(v, dtype=np.float32) for k, v in C.NORM_STATS.items()}
 d, masks, sets = load_sets(f'{C.MIMIC_DIR}/windows_12h_2h_gina2026.npz', stats)
 Dtr, Dva, Dte = (T.to_tensors(sets[k]) for k in ['train', 'val', 'test'])
 print('train / val / test windows:', [len(s[2]) for s in sets.values()],

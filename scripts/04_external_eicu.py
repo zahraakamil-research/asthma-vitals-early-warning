@@ -25,7 +25,7 @@ print(f'evaluated windows {em.sum()} | episodes {e["y"][em].sum()} | stays {len(
       f'patients {len(np.unique(e["patient"][em]))}')
 
 # frozen Conformer ensemble and MIMIC-IV training statistics
-stats = dict(np.load(f'{C.MIMIC_DIR}/norm_stats_12h.npz'))
+stats = {k: np.asarray(v, dtype=np.float32) for k, v in C.NORM_STATS.items()}
 x = ((e['X'][em] - stats['mu']) / stats['sd']).astype(np.float32)
 a = ((e['age'][em] - stats['a_mu']) / stats['a_sd']).astype(np.float32)
 y = e['y'][em]

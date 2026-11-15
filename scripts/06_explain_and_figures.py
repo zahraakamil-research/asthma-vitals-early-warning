@@ -12,7 +12,7 @@ from src import evaluate as E
 from src import explain as X_
 from src import train as T
 
-stats = dict(np.load(f'{C.MIMIC_DIR}/norm_stats_12h.npz'))
+stats = {k: np.asarray(v, dtype=np.float32) for k, v in C.NORM_STATS.items()}
 d, masks, sets = load_sets(f'{C.MIMIC_DIR}/windows_12h_2h_gina2026.npz', stats)
 xt, at, yt = sets['test']; yv = sets['val'][2]
 p = np.load(f'{C.OUT_DIR}/conformer/test_probs.npy')

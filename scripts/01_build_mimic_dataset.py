@@ -20,12 +20,9 @@ vh.to_parquet(f'{C.MIMIC_DIR}/vitals_hourly.parquet', index=False)
 print('adult asthma ICU patients with vitals:', vh.subject_id.nunique(), '| stays:', vh.stay_id.nunique())
 
 d = dm.build_windows(vh)
-d['split'] = dm.patient_split(d['subject'])
+d['split'] = dm.assign_split(d['subject'], dm.split_patients(vh))
 np.savez_compressed(f'{C.MIMIC_DIR}/windows_12h_2h_gina2026.npz', **d)
 
-train_mask = (d['split'] == 'train') & (d['flag'] == 0) & (d['transient'] == 0)
-stats = dm.norm_stats(d, train_mask)
-np.savez(f'{C.MIMIC_DIR}/norm_stats_12h.npz', **stats)
 
 print('windows:', len(d['y']), '| patients with >= 1 complete window:', len(np.unique(d['subject'])))
 for s in ['train', 'val', 'test']:
