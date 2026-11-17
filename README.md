@@ -1,8 +1,16 @@
 # Early warning of severe asthma deterioration from vital signs
 
-Code for the paper:
+Research Code Repository
 
-> Z. K. Sadoon and H. H. Jabbar, "Early Warning of Severe Asthma Deterioration from Vital Signs via Decision-Level Fusion of GINA 2026 Rules and a Conformer Model", submitted to the *International Journal of Intelligent Engineering and Systems*, 2026.
+Authors: Z. K. Sadoon and H. H. Jabbar
+
+Year: 2026
+
+This repository provides the source code and implementation details for the research study.
+
+The project presents a hybrid early-warning framework combining instantaneous clinical rule-based assessment with deep learning-based prediction to identify the risk of severe asthma deterioration using vital signs.
+
+The repository is intended to support research transparency, reproducibility, and independent evaluation of the proposed methodology.
 
 The approach has two parallel branches whose decisions are fused by reporting the more severe one:
 
